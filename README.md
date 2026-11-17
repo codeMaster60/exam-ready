@@ -4,7 +4,7 @@
 
 [Try the app](https://codemaster60.github.io/exam-ready/) · [Watch the demo](https://codemaster60.github.io/exam-ready/demo.html)
 
-Built by A. Sai Jayanth for the Globio Founder's Office – Product Manager Intern assignment.
+A product idea for Globio, built by A. Sai Jayanth.
 
 ---
 
