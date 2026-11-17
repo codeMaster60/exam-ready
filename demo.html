@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Am I exam-ready? · Working prototype</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23142A7E'/><path d='M9 16.5l4.5 4.5L23 11.5' stroke='%23F2D04B' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <style>
+    :root {
+      --brand: #142A7E; --brand-hover: #1D3A9F; --brand-soft: #EEF1FA;
+      --accent: #F2D04B; --accent-soft: #FDF7DC;
+      --ink: #101A3D; --muted: #56607F; --line: #DDE2EE; --bg: #EEF1F7; --panel: #FFFFFF;
+      --ok: #17845A; --ok-soft: #E5F4EC;
+      --s: 1; /* phone scale, set by script to fit the screen */
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+    button, select { font: inherit; color: inherit; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    .page {
+      max-width: 1120px; margin: 0 auto; padding: 40px 24px 56px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 56px; align-items: start;
+    }
+
+    /* ---------- left: the story ---------- */
+    .story { display: flex; flex-direction: column; gap: 24px; max-width: 480px; position: sticky; top: 24px; }
+    .eyebrow {
+      align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .3px; color: var(--brand);
+      background: var(--accent-soft); border: 1px solid #F3E2A0; padding: 4px 10px; border-radius: 99px;
+    }
+    .title { font-size: 44px; line-height: 1.05; font-weight: 750; margin: 10px 0 0; letter-spacing: -.02em; color: var(--brand); }
+    .title span { background: linear-gradient(transparent 70%, var(--accent) 70%, var(--accent) 90%, transparent 90%); }
+    .lede { margin: 12px 0 0; font-size: 18px; color: var(--muted); max-width: 42ch; }
+    .byline { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+
+    .caption {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 22px 20px;
+      display: flex; flex-direction: column; gap: 10px; min-height: 220px;
+      box-shadow: 0 4px 16px rgba(16, 26, 61, .05);
+    }
+    .capTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .capStep { font-size: 14px; font-weight: 700; color: var(--brand); }
+    .capDemo { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .capBar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; }
+    .capBar span { display: block; height: 100%; width: 0; background: var(--brand); transition: width .4s ease; }
+    .capTitle { font-size: 22px; font-weight: 700; line-height: 1.25; margin: 4px 0 0; }
+    .capBody { margin: 0; font-size: 16px; color: var(--muted); }
+
+    .asks h2, .why h2 { font-size: 18px; font-weight: 700; margin: 0 0 10px; }
+    .asks ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .asks li {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+      padding: 5px 10px 5px 6px; border-radius: 99px; background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+      transition: .25s;
+    }
+    .asks li i {
+      width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line);
+      display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 800; color: transparent;
+    }
+    .asks li.is-shown { background: var(--ok-soft); border-color: #BFE3CF; color: var(--ok); }
+    .asks li.is-shown i { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+    .why dl { margin: 0; display: grid; gap: 12px; }
+    .why dt { font-weight: 700; font-size: 15px; }
+    .why dd { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+
+    /* ---------- right: the stage ---------- */
+    .stage { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 460px; }
+    .toggle { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+    .toggle button {
+      border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 700;
+      padding: 10px 18px; border-radius: 999px; cursor: pointer; min-height: 44px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .toggle button svg { width: 15px; height: 15px; fill: currentColor; }
+    .toggle button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+
+    .phone-slot { width: calc(399px * var(--s)); height: calc(764px * var(--s)); }
+    .phone {
+      position: relative; width: 399px; height: 764px; transform: scale(var(--s)); transform-origin: top left;
+      background: #0B1029; border-radius: 52px; padding: 12px;
+      box-shadow: 0 1px 0 #2A3560 inset, 0 24px 60px rgba(16, 26, 61, .25);
+    }
+    .phone iframe {
+      position: absolute; left: 12px; top: 12px; width: 375px; height: 740px;
+      border: 0; border-radius: 40px; background: #F6F7FB;
+    }
+    .phone iframe[hidden] { display: block; visibility: hidden; }
+    .cover {
+      position: absolute; inset: 12px; border-radius: 40px; border: 0; background: transparent;
+      cursor: pointer; z-index: 4; display: grid; place-items: center;
+    }
+    .cover[hidden] { display: none; }
+    .cover-icon {
+      width: 84px; height: 84px; border-radius: 50%; background: rgba(16, 26, 61, .8);
+      display: grid; place-items: center; opacity: 0; transform: scale(.85); transition: .2s;
+    }
+    .cover-icon svg { width: 34px; height: 34px; fill: #fff; }
+    .cover.show-icon .cover-icon { opacity: 1; transform: none; }
+
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .ctrl {
+      min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+      color: var(--ink); font-size: 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .ctrl svg { width: 14px; height: 14px; fill: currentColor; }
+    .ctrl:hover { border-color: var(--brand); }
+    .ctrl.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .ctrl.primary:hover { background: var(--brand-hover); }
+    .ctrl[hidden], .controls[hidden] { display: none; }
+    select.ctrl {
+      appearance: none; -webkit-appearance: none; padding-right: 36px; max-width: 230px;
+      background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23142A7E' stroke-width='2' fill='none'/></svg>");
+      background-repeat: no-repeat; background-position: right 14px center; background-size: 11px;
+    }
+    .hint { font-size: 13px; color: var(--muted); margin: -6px 0 0; text-align: center; }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 24px 16px 48px; }
+      .stage { order: 1; width: auto; }
+      .story { order: 2; position: static; max-width: none; }
+      .title { font-size: 34px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+<main class="page">
+  <!-- LEFT: what it is, what's happening now, and why -->
+  <section class="story">
+    <header>
+      <span class="eyebrow">For Globio · Founder's Office PM Intern</span>
+      <h1 class="title">Am I <span>exam-ready?</span></h1>
+      <p class="lede">An 8-minute check that tells an A1 German learner whether to book their Goethe or ÖSD exam, before they pay the fee.</p>
+      <p class="byline">Prototype by A. Sai Jayanth</p>
+    </header>
+
+    <div class="caption" aria-live="polite">
+      <div class="capTop">
+        <span class="capStep" id="cap-step">Loading…</span>
+        <span class="capDemo" id="cap-demo"></span>
+      </div>
+      <div class="capBar"><span id="cap-bar"></span></div>
+      <h2 class="capTitle" id="cap-title"></h2>
+      <p class="capBody" id="cap-body"></p>
+    </div>
+
+    <div class="asks">
+      <h2>What the assignment asked for</h2>
+      <ul id="asks"></ul>
+    </div>
+
+    <div class="why">
+      <h2>Why this, and how we'd know it works</h2>
+      <dl>
+        <div><dt>The problem</dt><dd>Learners finish A1 and book the exam without knowing if they're ready. A fail costs the full fee again and weeks on their journey abroad.</dd></div>
+        <div><dt>How “ready” is decided</dt><dd>Anchored on the exam's 60% pass mark. Ready = 75%+ overall and every skill at 60%. The margin covers lucky answers in a short check. 60–74% is Almost; under 60% is Not yet.</dd></div>
+        <div><dt>How we'd know it works</dt><dd>Follow learners who take the check and then the real exam. Of those marked Ready, how many pass? Tune the 75% until “Ready” reliably means “passes”.</dd></div>
+        <div><dt>What it can't do yet</dt><dd>No listening, writing or speaking questions. Learners rate those themselves, and it never changes the score.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- RIGHT: one phone, two modes -->
+  <section class="stage">
+    <div class="toggle" role="group" aria-label="Prototype mode">
+      <button type="button" id="mode-try" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M9 11.2V6.5a1.5 1.5 0 0 1 3 0v4.2l4.2.8a2 2 0 0 1 1.6 2.3l-.9 5A2 2 0 0 1 15 20.5h-4.6a2 2 0 0 1-1.6-.8L5.2 15a1.5 1.5 0 0 1 2.3-1.9L9 14.6z"/></svg>
+        Try it yourself
+      </button>
+      <button type="button" id="mode-watch" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>
+        Watch it work
+      </button>
+    </div>
+
+    <div class="phone-slot">
+      <div class="phone">
+        <iframe id="proto" src="index.html" title="Working prototype: try it yourself" hidden></iframe>
+        <iframe id="demo" src="demo-frame.html" title="Demo: watch it work" tabindex="-1"></iframe>
+        <button type="button" class="cover" id="cover" aria-label="Pause or resume the demo">
+          <span class="cover-icon" id="cover-icon"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="controls" id="watch-controls">
+      <button type="button" class="ctrl primary" id="play-btn"></button>
+      <button type="button" class="ctrl" id="restart-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>Restart
+      </button>
+      <select class="ctrl" id="demo-select" aria-label="Choose a demo">
+        <option value="full">Full walkthrough</option>
+        <option value="start">1 · Pick exam and booking</option>
+        <option value="quiz">2 · Answer the 15 questions</option>
+        <option value="self">3 · Self-check</option>
+        <option value="ready">4 · Result: Ready to book</option>
+        <option value="almost">5 · Result: Almost there</option>
+        <option value="notyet">6 · Result: Not ready yet</option>
+        <option value="review">7 · Review and retake</option>
+      </select>
+    </div>
+    <div class="controls" id="try-controls" hidden>
+      <button type="button" class="ctrl" id="reset-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>Start over
+      </button>
+    </div>
+    <p class="hint" id="stage-hint">Tap the phone to pause</p>
+  </section>
+</main>
+
+<script>
+  const ASKS = [
+    { key: "questions", text: "10–15 questions: vocabulary, grammar, reading" },
+    { key: "ready",     text: "How ready they are" },
+    { key: "skills",    text: "Broken down by skill" },
+    { key: "practice",  text: "2–3 things to practise" },
+    { key: "logic",     text: "Our definition of “ready”" }
+  ];
+  const ICONS = {
+    pause:  '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
+    play:   '<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>',
+    replay: '<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>'
+  };
+
+  const $ = id => document.getElementById(id);
+  const select = $("demo-select");
+  const demoFrame = $("demo");
+  let mode = "watch";
+  let status = "loading";
+  let total = 0;
+  let shown = new Set();
+
+  function send(type, extra) {
+    demoFrame.contentWindow.postMessage(Object.assign({ target: "examready-demo", type }, extra), "*");
+  }
+  function play() { send("play", { name: select.value }); }
+
+  /* ---------- caption card ---------- */
+  function setCaption(stepText, title, body, progress) {
+    $("cap-step").textContent = stepText;
+    $("cap-title").textContent = title;
+    $("cap-body").textContent = body;
+    $("cap-bar").style.width = (progress * 100) + "%";
+  }
+
+  function renderAsks() {
+    $("asks").innerHTML = ASKS.map(a =>
+      `<li class="${shown.has(a.key) ? "is-shown" : ""}"><i>✓</i>${a.text}</li>`).join("");
+  }
+
+  /* ---------- play / pause ---------- */
+  function setStatus(next) {
+    status = next;
+    const [icon, label] = { playing: ["pause", "Pause"], paused: ["play", "Play"], ended: ["replay", "Replay"], loading: ["play", "Loading…"] }[next];
+    $("play-btn").innerHTML = ICONS[icon] + label;
+    $("cover-icon").innerHTML = ICONS[icon];
+    $("cover").classList.toggle("show-icon", next !== "playing");
+    if (next === "ended" && mode === "watch") {
+      setCaption("Done", "That's the whole flow", "Press Replay, choose another demo from the menu, or switch to “Try it yourself”.", 1);
+    }
+  }
+
+  function toggle() {
+    if (status === "playing") send("pause");
+    else if (status === "paused") send("resume");
+    else if (status === "ended") play();
+  }
+
+  /* ---------- the two modes ---------- */
+  function setMode(next) {
+    if (next === mode) return;
+    mode = next;
+    const watching = mode === "watch";
+    $("mode-watch").setAttribute("aria-pressed", watching);
+    $("mode-try").setAttribute("aria-pressed", !watching);
+    $("demo").hidden = !watching;
+    $("cover").hidden = !watching;
+    $("proto").hidden = watching;
+    $("watch-controls").hidden = !watching;
+    $("try-controls").hidden = watching;
+    $("stage-hint").textContent = watching ? "Tap the phone to pause" : "It's the real app. Tap anything.";
+    $("cap-demo").textContent = watching ? select.options[select.selectedIndex].text : "";
+    if (watching) {
+      if (status === "paused") send("resume"); else if (status === "ended") play();
+    } else {
+      if (status === "playing") send("pause");
+      setCaption("Your turn", "Try it yourself",
+        "This is the working app. Take the check as a learner would: pick your exam, answer the 15 questions, and see your result.", 0);
+    }
+  }
+
+  /* ---------- messages from the demo ---------- */
+  window.addEventListener("message", event => {
+    const msg = event.data || {};
+    if (msg.source !== "examready-demo") return;
+    if (msg.type === "ready") play();
+    if (msg.type === "chapters") {
+      total = msg.chapters.length; shown = new Set();
+      $("cap-demo").textContent = select.options[select.selectedIndex].text;
+      renderAsks();
+    }
+    if (msg.type === "step" && mode === "watch") {
+      if (msg.covers) shown.add(msg.covers);
+      setCaption(`Step ${msg.index + 1} of ${total}`, msg.say, msg.why, (msg.index + 1) / total);
+      renderAsks();
+    } else if (msg.type === "step" && msg.covers) {
+      shown.add(msg.covers);
+    }
+    if (msg.type === "status") setStatus(msg.status);
+  });
+
+  $("mode-watch").addEventListener("click", () => setMode("watch"));
+  $("mode-try").addEventListener("click", () => setMode("try"));
+  $("play-btn").addEventListener("click", toggle);
+  $("cover").addEventListener("click", toggle);
+  $("restart-btn").addEventListener("click", play);
+  select.addEventListener("change", play);
+  $("reset-btn").addEventListener("click", () => { $("proto").src = $("proto").src; });
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && mode === "watch" && e.target === document.body) { e.preventDefault(); toggle(); }
+  });
+
+  // Backup start, in case the demo loaded before this script was listening
+  demoFrame.addEventListener("load", () => { if (status === "loading") play(); });
+
+  // Fit the phone on screen
+  function fit() {
+    const narrow = window.innerWidth <= 900;
+    const byHeight = (window.innerHeight - (narrow ? 150 : 190)) / 764;
+    const byWidth = (window.innerWidth - 32) / 399;
+    const s = narrow ? Math.min(1, byWidth, Math.max(byHeight, .6)) : Math.min(1, byHeight);
+    document.documentElement.style.setProperty("--s", Math.max(.55, s).toFixed(3));
+  }
+  window.addEventListener("resize", fit);
+  fit();
+  renderAsks();
+  setStatus("loading");
+</script>
+</body>
+</html>

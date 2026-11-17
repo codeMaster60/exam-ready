@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo frame</title>
+  <meta name="description" content="A free 8-minute check that tells A1 German learners if they are ready to book their Goethe or ÖSD exam.">
+  <meta name="theme-color" content="#142A7E">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23142A7E'/><path d='M9 16.5l4.5 4.5L23 11.5' stroke='%23F2D04B' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="is-demo">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#142A7E"/><path d="M9 16.5l4.5 4.5L23 11.5" stroke="#F2D04B" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="logo-text">exam<b>ready</b></span>
+      </span>
+      <span class="topbar-tag">A1 German</span>
+    </div>
+  </header>
+
+  <main id="app" class="container" aria-live="polite"></main>
+
+  <footer class="footer">
+    A practice check, not an official exam result. Built for Globio by A. Sai Jayanth.
+  </footer>
+
+  <!-- Order matters: content → rules → screens -->
+  <script src="questions.js"></script>
+  <script src="scoring.js"></script>
+  <script src="app.js"></script>
+  <script src="demo-driver.js"></script>
+</body>
+</html>
